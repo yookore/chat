@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Dashboard</title>
+    <!--meta http-equiv="refresh" content="15" /--><!-- temp hack -->
+    <link rel="stylesheet" href="/static/bootstrap.css">
+    <link href="/static/style.css" rel="stylesheet" type="text/css">
+    <link href="/static/bootstrap-table.min.css" rel="stylesheet" type="text/css">
+    <script src="/static/jquery.js"></script>
+    <script src="/static/bootstrap.min.js"></script>
+    <script src="/static/jquery.cookie-1.4.1.min.js"></script>
+    <script src="/static/sockjs.min.js"></script>
+    <script src="/static/stomp.min.js"></script>
+    <script src="/static/bootstrap-table-all.min.js"></script>
+    <script src="//cdn.jsdelivr.net/sockjs/1.0.3/sockjs.min.js"></script>
+    <script>
+      $(document).ready(function() {
+      function getQueryStringValue (key) {
+        return unescape(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + escape(key).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
+      }
+      var sopts = {
+        sessionId: function() { return getQueryStringValue('sid') },
+        cookie: true
+        //transport: 'xhr-polling'
+      }
+      var sock = new SockJS('http://localhost:3001/im', null, sopts);
+      sock.onopen = function() {
+        console.log('open');
+        //sock.send('hello')
+      };
+      sock.onmessage = function(e) {
+        console.log("message received", e)
+        var msg = JSON.parse(e.data)
+        var sender = msg.sender
+        var recipientid = msg.recipientid
+        var message = msg.message
+        // identify the sender
+        // display the message in the chat box
+        // user A's message: message
+        $('#chat').append(sender + " message: " + "<b>" + message + "<br/>")
+      }
+      $("#chat").on('chatmsg', function(event, msg) {
+        console.log('chatmsg received', msg)
+        sock.send(JSON.stringify({
+          recipientid: 'bob', 
+          message: msg,
+          sender: getQueryStringValue('sid')
+        }))
+      })
+
+      //$(document).ready(function() {
+        var $messageBox = $("#message");
+        var $messageForm = $("#send-message");
+        var $chat = $("#chat");
+
+        $messageForm.submit(function(e) {
+          e.preventDefault();
+          $chat.append("<b>" + $messageBox.val() + "<br/>");
+          // send the message over http to the recipients sockjs url
+          //var event = new CustomEvent('chatmsg', {'msg': $messageBox.val() });
+          //document.getElementById('chat').dispatchEvent('chatmsg')
+          $chat.trigger('chatmsg', $messageBox.val())
+          //$messageBox.val("");
+        })
+      });
+    </script>
+  </head>
+  <body>
+    <h2 class="text-center">Unobstructive Chat</h2>
+    <div class="container" id="usernameWrap">
+      <div class="row">
+        <div class="col-md-12">
+          <form class="form-horizontal" role="form" id="usernameForm">
+            <div class="form-group">
+              <label for="inputEmail3" class="col-sm-2 control-label">
+                Username
+              </label>
+              <div class="col-sm-10">
+                <input class="form-control  input-md" id="username" />
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-10">
+                <button type="submit" class="btn btn-default">
+                  Sign in
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="container-fluid" id="contentWrap">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="row">
+                  <div class="col-md-9">
+            <div class="row">
+              <div class="panel panel-default">
+              <div class="panel-heading">
+                <h3 class="panel-title">
+                  Yookos Chat (prototype)
+                </h3>
+              </div>
+              <div class="panel-body" id="chat">
+                
+              </div>
+            </div>
+            </div>
+            <div class="row">
+              <form class="form-inline" id="send-message">
+                  <div class="form-group">
+                    <input  class="form-control  input-md" id="message" placeholder="Say something!">
+                  </div>
+                  <button type="submit" class="btn btn-default">Chat</button>
+              </form>           
+            </div>
+          </div>
+                  <div class="col-md-3">
+                    <div class="panel panel-default">
+                      <div class="panel-heading">
+                      <h3 class="panel-title">
+                        Online Users
+                      </h3>
+                    </div>
+                    <div class="panel-body" id="users">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </body>
+</html>
